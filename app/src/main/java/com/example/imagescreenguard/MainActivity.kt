@@ -15,7 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private var selectedImageUri: Uri? = null
-    private var currentOpacity: Float = 0.5f
+    private var currentOpacity: Float = 0.8f
+    private var currentHoleSize: Float = 150f
 
     private lateinit var previewImage: ImageView
 
@@ -43,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         val btnStart = findViewById<Button>(R.id.btnStart)
         val btnStop = findViewById<Button>(R.id.btnStop)
         val seekBarOpacity = findViewById<SeekBar>(R.id.seekBarOpacity)
+        val seekBarHoleSize = findViewById<SeekBar>(R.id.seekBarHoleSize)
 
         btnSelectImage.setOnClickListener {
             selectImageLauncher.launch("image/*")
@@ -53,6 +55,17 @@ class MainActivity : AppCompatActivity() {
                 currentOpacity = progress / 100f
                 previewImage.alpha = currentOpacity
 
+                if (selectedImageUri != null) {
+                    startGuardService()
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        seekBarHoleSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                currentHoleSize = progress.toFloat().coerceAtLeast(50f)
                 if (selectedImageUri != null) {
                     startGuardService()
                 }
@@ -79,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, OverlayService::class.java).apply {
             putExtra("IMAGE_URI", selectedImageUri.toString())
             putExtra("OPACITY", currentOpacity)
+            putExtra("HOLE_SIZE", currentHoleSize)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
