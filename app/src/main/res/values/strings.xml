@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Image Screen Guard</string>
+    <string name="select_image">เลือกรูปภาพบังสายตา</string>
+    <string name="opacity_label">ปรับความโปร่งแสง (Opacity)</string>
+    <string name="start_guard">เปิดใช้งาน Screen Guard</string>
+    <string name="stop_guard">ปิดใช้งาน Screen Guard</string>
+</resources>
