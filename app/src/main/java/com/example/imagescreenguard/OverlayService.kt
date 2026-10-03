@@ -10,13 +10,12 @@ import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
-import android.widget.ImageView
 import androidx.core.app.NotificationCompat
 
 class OverlayService : Service() {
 
     private var windowManager: WindowManager? = null
-    private var overlayView: ImageView? = null
+    private var overlayView: PrivacyOverlayView? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -24,20 +23,22 @@ class OverlayService : Service() {
         startForegroundServiceNotification()
 
         val imageUriString = intent?.getStringExtra("IMAGE_URI")
-        val opacity = intent?.getFloatExtra("OPACITY", 0.5f) ?: 0.5f
+        val opacity = intent?.getFloatExtra("OPACITY", 0.8f) ?: 0.8f
+        val holeSize = intent?.getFloatExtra("HOLE_SIZE", 150f) ?: 150f
 
         if (overlayView == null) {
-            setupOverlay(imageUriString, opacity)
+            setupOverlay(imageUriString, opacity, holeSize)
         } else {
-            updateOverlay(imageUriString, opacity)
+            updateOverlay(imageUriString, opacity, holeSize)
         }
 
         return START_STICKY
     }
 
-    private fun setupOverlay(imageUriString: String?, opacity: Float) {
+    private fun setupOverlay(imageUriString: String?, opacity: Float, holeSize: Float) {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
+        // อนุญาตให้รับ Touch Event บนช่องมองได้
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -46,37 +47,29 @@ class OverlayService : Service() {
             else
                 @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
         }
 
-        overlayView = ImageView(this).apply {
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            alpha = opacity
+        overlayView = PrivacyOverlayView(this).apply {
+            imageOpacity = (opacity * 255).toInt()
+            holeRadius = holeSize
             if (imageUriString != null) {
-                try {
-                    setImageURI(Uri.parse(imageUriString))
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                setImageUri(Uri.parse(imageUriString))
             }
         }
 
         windowManager?.addView(overlayView, params)
     }
 
-    private fun updateOverlay(imageUriString: String?, opacity: Float) {
+    private fun updateOverlay(imageUriString: String?, opacity: Float, holeSize: Float) {
         overlayView?.apply {
-            alpha = opacity
+            imageOpacity = (opacity * 255).toInt()
+            holeRadius = holeSize
             if (imageUriString != null) {
-                try {
-                    setImageURI(Uri.parse(imageUriString))
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                setImageUri(Uri.parse(imageUriString))
             }
         }
     }
@@ -93,8 +86,8 @@ class OverlayService : Service() {
         }
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Image Screen Guard Active")
-            .setContentText("กำลังแสดงรูปภาพบังสายตาบนหน้าจอ")
+            .setContentTitle("Privacy Screen Guard Active")
+            .setContentText("โหมดบังสายตาแบบเจาะช่องมองกำลังทำงาน")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build()
 
